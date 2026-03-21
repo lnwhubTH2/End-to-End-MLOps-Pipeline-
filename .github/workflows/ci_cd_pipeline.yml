@@ -1,0 +1,42 @@
+name: Continuous Integration & Deployment (CI/CD)
+
+# 1. กำหนดเหตุการณ์ที่จะปลุกหุ่นยนต์สาย Application / Infrastructure
+on:
+  push:
+    paths:
+      - 'app/**'
+      - 'tests/**'
+      - 'Dockerfile'
+      - 'requirements.txt'
+
+  workflow_run:
+    workflows: ["Continuous Training (CT) Pipeline"]
+    types:
+      - completed
+
+jobs:
+  # 2. นิยามงานตรวจสอบคุณภาพโค้ดและสร้างซอฟต์แวร์
+  test-and-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # ทอดสอบ API (Continuous Integration)
+      - name: Run API Tests (CI)
+        run: PYTHONPATH=. pytest tests/
+      
+      # อัดแอปพลิเคชันลง Docker (Continuous Deployment)
+      - name: Build Docker Image (CD)
+        run: docker build -t iris-ml-api:latest .
